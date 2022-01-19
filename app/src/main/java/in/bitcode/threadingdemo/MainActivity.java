@@ -1,10 +1,13 @@
 package in.bitcode.threadingdemo;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -41,72 +44,35 @@ public class MainActivity extends AppCompatActivity {
                     "https://aavidsoft.com/new/somefile.mp3"
                 };
 
-                new DownloadThreadNew()
+                Handler handler = new MyHandler();
+
+                new DownloadThreadNew(MainActivity.this, handler)
                         .execute(files);
             }
         });
     }
 
 
-    class DownloadThreadNew extends AsyncTask<String, Integer, Float> {
+     class MyHandler extends Handler {
+         @Override
+         public void handleMessage(@NonNull Message msg) {
+             super.handleMessage(msg);
+             if(msg != null && msg.obj != null) {
+                 if(msg.arg1 == 1) {
+                     float res = (float) msg.obj;
+                     btnDownload.setText("Res: " + msg.obj);
+                 }
+                 if(msg.arg1 == 2) {
+                     int val = (Integer)msg.obj;
+                     btnDownload.setText("Progress: " + msg.obj);
+                 }
+             }
+         }
+     }
 
-        private ProgressDialog progressDialog;
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
 
-            Log.e("tag", "onPre: " + Thread.currentThread().getName());
-
-            progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setMessage("Downloading...");
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            progressDialog.show();
-        }
-
-        @Override
-        protected Float doInBackground(String... args) {
-
-            Log.e("tag", "doInBg: " + Thread.currentThread().getName());
-
-            for(String file : args) {
-
-                progressDialog.setMessage(file);
-
-                for (int i = 0; i <= 100; i++) {
-                    //btnDownload.setText(i + " % "); //Should not have worked
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    progressDialog.setProgress(i);
-
-                    Integer [] progress = new Integer[1];
-                    progress[0] = i;
-                    publishProgress(progress);
-                }
-            }
-            return 12.12F;
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            btnDownload.setText(values[0] + "%");
-        }
-
-        @Override
-        protected void onPostExecute(Float aFloat) {
-            super.onPostExecute(aFloat);
-            Log.e("tag", "onPost: " + Thread.currentThread().getName());
-            btnDownload.setText(aFloat  +" is final res");
-            progressDialog.dismiss();
-        }
-
-    }
-
-    class DownloadThread extends Thread {
+    public class DownloadThread extends Thread {
 
         private String path;
         private ProgressDialog progressDialog;
